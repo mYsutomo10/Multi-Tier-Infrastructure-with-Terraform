@@ -11,7 +11,7 @@ variable "credentials_file" {
 variable "region" {
   description = "The region to deploy resources"
   type        = string
-  default     = "us-central1"
+  default     = "asia-southeast2"
 }
 
 variable "zone" {

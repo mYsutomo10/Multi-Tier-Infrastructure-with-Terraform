@@ -1,0 +1,2 @@
+# <u>Multi-Tier Infrastructure with Terraform on GCP</u>
+This repository contains Terraform configurations to deploy a complete 3-tier web application infrastructure (frontend, backend, database) on Google Cloud Platform.
