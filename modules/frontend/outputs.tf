@@ -1,4 +1,4 @@
 output "frontend_url" {
-  description = "The URL to access the frontend application"
-  value       = "http://${google_compute_global_address.frontend_lb_ip.address}"
+  description = "Frontend URL"
+  value       = "http://${google_compute_global_forwarding_rule.frontend_forwarding_rule.ip_address}"
 }
