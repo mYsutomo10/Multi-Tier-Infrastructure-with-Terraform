@@ -1,10 +1,10 @@
 variable "project_id" {
-  description = "The ID of the GCP project"
+  description = "GCP Project ID"
   type        = string
 }
 
 variable "region" {
-  description = "The region to deploy resources"
+  description = "GCP region"
   type        = string
 }
 
@@ -13,12 +13,18 @@ variable "environment" {
   type        = string
 }
 
-variable "vpc_network" {
-  description = "The VPC network name"
+variable "vpc_id" {
+  description = "ID of the VPC"
+  type        = string
+}
+
+variable "subnet_id" {
+  description = "ID of the subnet"
   type        = string
 }
 
 variable "db_tier" {
-  description = "The machine type for Cloud SQL instance"
+  description = "Database tier"
   type        = string
+  default     = "db-f1-micro"
 }
