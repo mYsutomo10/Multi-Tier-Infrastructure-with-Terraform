@@ -1,15 +1,19 @@
 variable "project_id" {
-  description = "The ID of the GCP project"
+  description = "GCP Project ID"
   type        = string
 }
 
 variable "region" {
-  description = "The region to deploy resources"
+  description = "GCP region"
   type        = string
-  default     = "asia-southeast2"
 }
 
-variable "environment" {
-  description = "Environment (dev, staging, prod)"
+variable "vpc_name" {
+  description = "Name of the VPC network"
+  type        = string
+}
+
+variable "subnet_cidr" {
+  description = "CIDR range for the subnet"
   type        = string
 }
