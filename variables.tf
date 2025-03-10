@@ -1,17 +1,58 @@
-# Variable values for Terraform deployment
-project_id = "your-gcp-project-id"
-region     = "asia-southeast2"
-environment = "dev" # Change this to staging or prod as needed
+variable "project_id" {
+  description = "GCP Project ID"
+  type        = string
+}
 
-# Default settings (can be overridden in environment-specific configurations)
-vpc_name = "multi-tier-vpc"
-subnet_cidr = "10.0.0.0/16"
+variable "region" {
+  description = "GCP region to deploy resources"
+  type        = string
+  default     = "asia-southeast2"
+}
 
-# Instance types (use free tier eligible resources by default)
-frontend_machine_type = "e2-micro"
-backend_machine_type = "e2-micro"
-db_tier = "db-f1-micro"
+variable "environment" {
+  description = "Environment (dev, staging, prod)"
+  type        = string
+  default     = "dev"
+}
 
-# Instance counts
-frontend_instance_count = 2
-backend_instance_count = 2
+variable "vpc_name" {
+  description = "Name of the VPC network"
+  type        = string
+  default     = "multi-tier-vpc"
+}
+
+variable "subnet_cidr" {
+  description = "CIDR range for the subnet"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "frontend_machine_type" {
+  description = "Machine type for frontend instances"
+  type        = string
+  default     = "e2-micro"
+}
+
+variable "backend_machine_type" {
+  description = "Machine type for backend instances"
+  type        = string
+  default     = "e2-micro"
+}
+
+variable "db_tier" {
+  description = "Database tier"
+  type        = string
+  default     = "db-f1-micro"
+}
+
+variable "frontend_instance_count" {
+  description = "Number of frontend instances"
+  type        = number
+  default     = 2
+}
+
+variable "backend_instance_count" {
+  description = "Number of backend instances"
+  type        = number
+  default     = 2
+}
