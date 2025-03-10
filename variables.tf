@@ -1,23 +1,12 @@
 variable "project_id" {
-  description = "The ID of the GCP project"
-  type        = string
-}
-
-variable "credentials_file" {
-  description = "Path to the GCP credentials JSON file"
+  description = "GCP Project ID"
   type        = string
 }
 
 variable "region" {
-  description = "The region to deploy resources"
+  description = "GCP region to deploy resources"
   type        = string
   default     = "asia-southeast2"
-}
-
-variable "zone" {
-  description = "The zone to deploy resources"
-  type        = string
-  default     = "us-central1-a"
 }
 
 variable "environment" {
@@ -26,32 +15,44 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "frontend_instance_type" {
-  description = "Instance type for frontend servers"
+variable "vpc_name" {
+  description = "Name of the VPC network"
   type        = string
-  default     = "e2-medium"
+  default     = "multi-tier-vpc"
 }
 
-variable "backend_instance_type" {
-  description = "Instance type for backend servers"
+variable "subnet_cidr" {
+  description = "CIDR range for the subnet"
   type        = string
-  default     = "e2-medium"
+  default     = "10.0.0.0/16"
+}
+
+variable "frontend_machine_type" {
+  description = "Machine type for frontend instances"
+  type        = string
+  default     = "e2-micro"
+}
+
+variable "backend_machine_type" {
+  description = "Machine type for backend instances"
+  type        = string
+  default     = "e2-micro"
 }
 
 variable "db_tier" {
-  description = "The machine type for Cloud SQL instance"
+  description = "Database tier"
   type        = string
-  default     = "db-n1-standard-1"
+  default     = "db-f1-micro"
 }
 
-variable "min_instances" {
-  description = "Minimum number of instances in the autoscaling group"
+variable "frontend_instance_count" {
+  description = "Number of frontend instances"
   type        = number
   default     = 2
 }
 
-variable "max_instances" {
-  description = "Maximum number of instances in the autoscaling group"
+variable "backend_instance_count" {
+  description = "Number of backend instances"
   type        = number
-  default     = 5
+  default     = 2
 }
