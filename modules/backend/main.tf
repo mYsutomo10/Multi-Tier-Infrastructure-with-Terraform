@@ -1,156 +1,93 @@
-# Create instance template for backend
 resource "google_compute_instance_template" "backend_template" {
-  name_prefix  = "${var.environment}-backend-template-"
-  machine_type = var.instance_type
-  tags         = ["backend"]
+  name_prefix  = "backend-template-"
+  machine_type = var.machine_type
+  region       = var.region
 
   disk {
     source_image = "debian-cloud/debian-11"
     auto_delete  = true
     boot         = true
-    disk_size_gb = 20
+    disk_type    = "pd-standard"  
+    disk_size_gb = 10
   }
 
   network_interface {
-    network    = var.vpc_network
-    subnetwork = var.vpc_subnetwork
+    subnetwork = var.subnet_id
+    # No external IP for better security
   }
 
-  metadata_startup_script = <<-EOF
-    #!/bin/bash
-    apt-get update
-    apt-get install -y openjdk-11-jdk
-    apt-get install -y maven
-    
-    # Create a simple Spring Boot app
-    mkdir -p /app/src/main/java/com/example/demo
-    
-    # Create pom.xml
-    cat > /app/pom.xml << 'EOL'
-    <?xml version="1.0" encoding="UTF-8"?>
-    <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-      <modelVersion>4.0.0</modelVersion>
-      <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.5</version>
-      </parent>
-      <groupId>com.example</groupId>
-      <artifactId>demo</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
-      <name>demo</name>
-      <description>Demo project for Spring Boot</description>
-      <properties>
-        <java.version>11</java.version>
-      </properties>
-      <dependencies>
-        <dependency>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-starter-jdbc</artifactId>
-        </dependency>
-        <dependency>
-          <groupId>org.postgresql</groupId>
-          <artifactId>postgresql</artifactId>
-          <scope>runtime</scope>
-        </dependency>
-      </dependencies>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-          </plugin>
-        </plugins>
-      </build>
-    </project>
-    EOL
-    
-    # Create application.properties
-    mkdir -p /app/src/main/resources
-    cat > /app/src/main/resources/application.properties << EOL
-    server.port=8080
-    spring.datasource.url=jdbc:postgresql:///${var.db_connection_name}
-    spring.datasource.username=postgres
-    spring.datasource.password=postgres
-    spring.datasource.driver-class-name=org.postgresql.Driver
-    EOL
-    
-    # Create main application class
-    cat > /app/src/main/java/com/example/demo/DemoApplication.java << 'EOL'
-    package com.example.demo;
-    
-    import org.springframework.boot.SpringApplication;
-    import org.springframework.boot.autoconfigure.SpringBootApplication;
-    
-    @SpringBootApplication
-    public class DemoApplication {
-      public static void main(String[] args) {
-        SpringApplication.run(DemoApplication.class, args);
-      }
-    }
-    EOL
-    
-    # Create a simple controller
-    cat > /app/src/main/java/com/example/demo/Controller.java << 'EOL'
-    package com.example.demo;
-    
-    import org.springframework.web.bind.annotation.GetMapping;
-    import org.springframework.web.bind.annotation.RestController;
-    import java.util.HashMap;
-    import java.util.Map;
-    
-    @RestController
-    public class Controller {
-      @GetMapping("/api/status")
-      public Map<String, String> status() {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "OK");
-        response.put("tier", "Backend");
-        return response;
-      }
-    }
-    EOL
-    
-    # Build and run the application
-    cd /app
-    mvn package -DskipTests
-    java -jar target/demo-0.0.1-SNAPSHOT.jar > /app/application.log 2>&1 &
-  EOF
+  metadata = {
+    startup-script = <<-EOF
+      #!/bin/bash
+      apt-get update
+      apt-get install -y nodejs npm
+      mkdir -p /app
+      cat > /app/server.js << 'EOL'
+      const http = require('http');
+      
+      const server = http.createServer((req, res) => {
+        if (req.url === '/api/status') {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.end(JSON.stringify({
+            status: 'operational',
+            timestamp: new Date().toISOString(),
+            instance: process.env.HOSTNAME || 'unknown'
+          }));
+        } else {
+          res.writeHead(404, {'Content-Type': 'application/json'});
+          res.end(JSON.stringify({error: 'Not found'}));
+        }
+      });
+      
+      const PORT = process.env.PORT || 8080;
+      server.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+      EOL
+      
+      cat > /etc/systemd/system/backend.service << 'EOL'
+      [Unit]
+      Description=Backend Node.js Service
+      After=network.target
+      
+      [Service]
+      Environment=PORT=8080
+      Environment=DB_CONNECTION=${var.database_connection_string}
+      Type=simple
+      User=www-data
+      WorkingDirectory=/app
+      ExecStart=/usr/bin/node /app/server.js
+      Restart=on-failure
+      
+      [Install]
+      WantedBy=multi-user.target
+      EOL
+      
+      systemctl enable backend
+      systemctl start backend
+    EOF
+  }
+
+  service_account {
+    email  = var.service_account_email
+    scopes = ["cloud-platform"]
+  }
 
   lifecycle {
     create_before_destroy = true
   }
 
-  service_account {
-    scopes = ["cloud-platform"]
-  }
+  tags = ["backend", "api-server", var.environment]
 }
 
-# Create health check
-resource "google_compute_health_check" "backend_health_check" {
-  name                = "${var.environment}-backend-health-check"
-  check_interval_sec  = 5
-  timeout_sec         = 5
-  healthy_threshold   = 2
-  unhealthy_threshold = 10
+# Managed instance group for backend servers
+resource "google_compute_region_instance_group_manager" "backend_mig" {
+  name                      = "backend-mig-${var.environment}"
+  base_instance_name        = "backend"
+  region                    = var.region
+  distribution_policy_zones = data.google_compute_zones.available.names
+  target_size               = var.instance_count
 
-  http_health_check {
-    request_path = "/api/status"
-    port         = "8080"
-  }
-}
-
-# Create instance group manager
-resource "google_compute_region_instance_group_manager" "backend_group" {
-  name               = "${var.environment}-backend-group"
-  base_instance_name = "${var.environment}-backend"
-  region             = var.region
-  
   version {
     instance_template = google_compute_instance_template.backend_template.id
   }
@@ -166,52 +103,58 @@ resource "google_compute_region_instance_group_manager" "backend_group" {
   }
 }
 
-# Create autoscaler
-resource "google_compute_region_autoscaler" "backend_autoscaler" {
-  name   = "${var.environment}-backend-autoscaler"
-  region = var.region
-  target = google_compute_region_instance_group_manager.backend_group.id
+# Health check for backend
+resource "google_compute_health_check" "backend_health_check" {
+  name                = "backend-health-check-${var.environment}"
+  check_interval_sec  = 5
+  timeout_sec         = 5
+  healthy_threshold   = 2
+  unhealthy_threshold = 2
 
-  autoscaling_policy {
-    max_replicas    = var.max_instances
-    min_replicas    = var.min_instances
-    cooldown_period = 60
-
-    cpu_utilization {
-      target = 0.7
-    }
+  http_health_check {
+    port         = 8080
+    request_path = "/api/status"
   }
 }
 
-# Create internal load balancer
-resource "google_compute_address" "backend_lb_ip" {
-  name         = "${var.environment}-backend-lb-ip"
-  subnetwork   = var.vpc_subnetwork
-  address_type = "INTERNAL"
-  region       = var.region
+# Internal load balancer for backend
+resource "google_compute_region_backend_service" "backend_service" {
+  name                  = "backend-service-${var.environment}"
+  region                = var.region
+  protocol              = "HTTP"
+  load_balancing_scheme = "INTERNAL_MANAGED"
+  timeout_sec           = 10
+  health_checks         = [google_compute_health_check.backend_health_check.id]
+  
+  backend {
+    group = google_compute_region_instance_group_manager.backend_mig.instance_group
+  }
+}
+
+resource "google_compute_region_url_map" "backend_url_map" {
+  name            = "backend-url-map-${var.environment}"
+  region          = var.region
+  default_service = google_compute_region_backend_service.backend_service.id
+}
+
+resource "google_compute_region_target_http_proxy" "backend_http_proxy" {
+  name    = "backend-http-proxy-${var.environment}"
+  region  = var.region
+  url_map = google_compute_region_url_map.backend_url_map.id
 }
 
 resource "google_compute_forwarding_rule" "backend_forwarding_rule" {
-  name                  = "${var.environment}-backend-forwarding-rule"
+  name                  = "backend-forwarding-rule-${var.environment}"
   region                = var.region
-  load_balancing_scheme = "INTERNAL"
-  backend_service       = google_compute_region_backend_service.backend_service.id
-  all_ports             = false
-  ports                 = ["8080"]
-  network               = var.vpc_network
-  subnetwork            = var.vpc_subnetwork
-  ip_address            = google_compute_address.backend_lb_ip.address
+  ip_protocol           = "TCP"
+  load_balancing_scheme = "INTERNAL_MANAGED"
+  port_range            = "80"
+  target                = google_compute_region_target_http_proxy.backend_http_proxy.id
+  network               = var.vpc_id
+  subnetwork            = var.subnet_id
 }
 
-resource "google_compute_region_backend_service" "backend_service" {
-  name                  = "${var.environment}-backend-service"
-  region                = var.region
-  protocol              = "TCP"
-  load_balancing_scheme = "INTERNAL"
-  health_checks         = [google_compute_health_check.backend_health_check.id]
-
-  backend {
-    group           = google_compute_region_instance_group_manager.backend_group.instance_group
-    balancing_mode  = "CONNECTION"
-  }
+# Available zones
+data "google_compute_zones" "available" {
+  region = var.region
 }

@@ -1,15 +1,10 @@
 variable "project_id" {
-  description = "The ID of the GCP project"
+  description = "GCP Project ID"
   type        = string
 }
 
 variable "region" {
-  description = "The region to deploy resources"
-  type        = string
-}
-
-variable "zone" {
-  description = "The zone to deploy resources"
+  description = "GCP region"
   type        = string
 }
 
@@ -18,32 +13,35 @@ variable "environment" {
   type        = string
 }
 
-variable "vpc_network" {
-  description = "The VPC network name"
+variable "vpc_id" {
+  description = "ID of the VPC"
   type        = string
 }
 
-variable "vpc_subnetwork" {
-  description = "The VPC subnetwork name"
+variable "subnet_id" {
+  description = "ID of the subnet"
   type        = string
 }
 
-variable "instance_type" {
-  description = "Instance type for backend servers"
+variable "machine_type" {
+  description = "Machine type for compute instances"
   type        = string
+  default     = "e2-micro"
 }
 
-variable "min_instances" {
-  description = "Minimum number of instances in the autoscaling group"
+variable "instance_count" {
+  description = "Number of instances in the managed instance group"
   type        = number
+  default     = 2
 }
 
-variable "max_instances" {
-  description = "Maximum number of instances in the autoscaling group"
-  type        = number
-}
-
-variable "db_connection_name" {
-  description = "The connection name for the database"
+variable "service_account_email" {
+  description = "Service account email for backend instances"
   type        = string
+}
+
+variable "database_connection_string" {
+  description = "Database connection string"
+  type        = string
+  sensitive   = true
 }
