@@ -8,7 +8,7 @@ The architecture follows a standard 3-tier pattern:
 2. **Backend Tier**: API servers running Node.js, deployed in a managed instance group behind an internal load balancer
 3. **Database Tier**: PostgreSQL database deployed as a Cloud SQL instance with private IP
 
-![Architecture Diagram](https://i.imgur.com/placeholder.png)
+![Architecture Diagram](https://storage.googleapis.com/project-image-sources/gcp-3tier.png)
 
 ## Directory Structure
 ```
@@ -69,8 +69,8 @@ multi-tier-terraform/
 ## Getting Started
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/multi-tier-terraform.git
-cd multi-tier-terraform
+git clone https://github.com/mYsutomo10/Multi-Tier-Infrastructure-with-Terraform.git
+cd Multi-Tier-Infrastructure-with-Terraform
 ```
 
 ### 2. Set up your GCP environment
@@ -156,17 +156,6 @@ backend_instance_count  = 3
 
 ### Adding custom configurations
 To customize the application further, you can modify the modules or add new modules as needed.
-
-## Maintenance
-### Updating the infrastructure
-```bash
-# Pull the latest changes
-git pull
-
-# Apply the changes
-cd environments/[env]
-terraform apply
-```
 
 ### Destroying the infrastructure
 ```bash
